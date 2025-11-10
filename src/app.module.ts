@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { QuoteController } from './controllers/quote.controller';
 import { ExecuteController } from './controllers/execute.controller';
 import { SolverBusController } from './controllers/solver-bus.controller';
+import { DepositWithdrawalController } from './controllers/deposit-withdrawal.controller';
 import { PricingService } from './services/pricing.service';
 import { SimplePricingService } from './services/simple-pricing.service';
 import { ExecutionService } from './services/execution.service';
@@ -15,10 +16,11 @@ import { SwapMonitoringService } from './services/swap-monitoring.service';
 import { SolverBusService } from './services/solver-bus.service';
 import { Nep413SignerService } from './services/nep413-signer.service';
 import { InventoryService } from './services/inventory.service';
-import { TransferExecutorService } from './services/transfer-executor.service';
+import { DepositWithdrawalService } from './services/deposit-withdrawal.service';
+import { ChaindefuserBridgeService } from './services/chaindefuser-bridge.service';
 
 @Module({
-  controllers: [QuoteController, ExecuteController, SolverBusController],
+  controllers: [QuoteController, ExecuteController, SolverBusController, DepositWithdrawalController],
   providers: [
     ConfigService,
     EvmService,
@@ -33,7 +35,8 @@ import { TransferExecutorService } from './services/transfer-executor.service';
     SolverBusService,
     Nep413SignerService,
     InventoryService,
-    TransferExecutorService,
+    DepositWithdrawalService,
+    ChaindefuserBridgeService,
   ],
 })
 export class AppModule {}

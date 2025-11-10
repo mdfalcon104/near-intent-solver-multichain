@@ -46,4 +46,25 @@ export class NearService {
       finality: 'optimistic',
     });
   }
+
+  /**
+   * Call a function on any NEAR contract
+   * Used for deposit/withdrawal and other contract interactions
+   */
+  async functionCall(
+    contractId: string,
+    methodName: string,
+    args: any,
+    gas: string = '100000000000000',
+    deposit: string = '0',
+  ) {
+    if (!this.account) await this.init();
+    return this.account.functionCall({
+      contractId: contractId,
+      methodName: methodName,
+      args,
+      gas,
+      attachedDeposit: deposit,
+    });
+  }
 }

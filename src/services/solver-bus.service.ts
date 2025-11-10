@@ -5,7 +5,6 @@ import { PricingService } from './pricing.service';
 import { SimplePricingService } from './simple-pricing.service';
 import { Nep413SignerService } from './nep413-signer.service';
 import { InventoryService } from './inventory.service';
-import { TransferExecutorService } from './transfer-executor.service';
 
 interface QuoteRequestParams {
   subscription: string;
@@ -48,7 +47,6 @@ export class SolverBusService implements OnModuleInit, OnModuleDestroy {
     private readonly simplePricingService: SimplePricingService,
     private readonly nep413Signer: Nep413SignerService,
     private readonly inventoryService: InventoryService,
-    private readonly transferExecutor: TransferExecutorService,
   ) {
     this.wsUrl =
       this.configService.get('SOLVER_BUS_WS_URL') ||
@@ -320,13 +318,6 @@ export class SolverBusService implements OnModuleInit, OnModuleDestroy {
         this.logger.log(`  Chain: ${destChain}`);
         this.logger.log(`  Token: ${destToken}`);
         this.logger.log(`  Amount: ${quoteMetadata.amountOut}`);
-
-        // Check if we have transfer executor configured for this chain
-        if (!this.transferExecutor.isChainConfigured(destChain)) {
-          this.logger.warn(`⚠️  Transfer executor not configured for ${destChain} - SKIPPING TRANSFER`);
-          this.activeQuotes.delete(quote_id);
-          return;
-        }
 
         // In production, get recipient address from quote metadata or config
         // For now, we'll skip actual transfer execution (would need recipient address)
