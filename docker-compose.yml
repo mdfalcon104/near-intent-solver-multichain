@@ -1,0 +1,22 @@
+version: '3.8'
+services:
+  redis:
+    image: redis:7
+    ports: ['6379:6379']
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: solverdb
+    ports: ['5432:5432']
+  solver:
+    build: .
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - DATABASE_URL=postgres://postgres:password@postgres:5432/solverdb
+      - PORT=8080
+    ports:
+      - '8080:8080'
+    depends_on:
+      - redis
+      - postgres
