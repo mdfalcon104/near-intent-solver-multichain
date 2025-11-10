@@ -76,3 +76,6 @@ docker-compose.override.yml
 # Build artifacts
 *.tsbuildinfo
 .eslintcache
+
+node_modules/
+dist/

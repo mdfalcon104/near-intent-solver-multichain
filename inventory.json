@@ -1,105 +1,5 @@
 {
   "chains": {
-    "near": {
-      "enabled": true,
-      "tokens": [
-        {
-          "address": "usdt.tether-token.near",
-          "symbol": "USDT",
-          "decimals": 6,
-          "minBalance": "100000000",
-          "currentBalance": "1000000000",
-          "enabled": true,
-          "address_price": "0xdac17f958d2ee523a2206206994597c13d831ec7",
-          "chainId_price": "56"
-        },
-        {
-          "address": "wrap.near",
-          "symbol": "wNEAR",
-          "decimals": 24,
-          "minBalance": "50000000000000000000000000",
-          "currentBalance": "500000000000000000000000000",
-          "enabled": true,
-          "address_price": "0xc42c30ac6cc15fac9f58a8973a927d3d860b5979",
-          "chainId_price": "1"
-        },
-        {
-          "address": "token.v2.ref-finance.near",
-          "symbol": "REF",
-          "decimals": 18,
-          "minBalance": "1000000000000000000000",
-          "currentBalance": "10000000000000000000000",
-          "enabled": false,
-          "address_price": "0x0000000000000000000000000000000000000000",
-          "chainId_price": "1"
-        },
-        {
-          "address": "eth-0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf.omft.near",
-          "symbol": "cbbToken",
-          "decimals": 18,
-          "minBalance": "1000000000000000000",
-          "currentBalance": "0",
-          "enabled": false,
-          "address_price": "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
-          "chainId_price": "1"
-        },
-        {
-          "address": "eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
-          "symbol": "USDC (omft)",
-          "decimals": 6,
-          "minBalance": "1000000",
-          "currentBalance": "0",
-          "enabled": false,
-          "address_price": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "chainId_price": "1"
-        },
-        {
-          "address": "eth-0x6b175474e89094c44da98b954eedeac495271d0f.omft.near",
-          "symbol": "DAI",
-          "decimals": 18,
-          "minBalance": "1000000000000000000",
-          "currentBalance": "0",
-          "enabled": false,
-          "address_price": "0x6b175474e89094c44da98b954eedeac495271d0f",
-          "chainId_price": "1"
-        }
-      ]
-    },
-    "ethereum": {
-      "enabled": true,
-      "tokens": [
-        {
-          "address": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "symbol": "USDC",
-          "decimals": 6,
-          "minBalance": "10000000",
-          "currentBalance": "100000000",
-          "enabled": true,
-          "address_price": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "chainId_price": "1"
-        },
-        {
-          "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
-          "symbol": "USDT",
-          "decimals": 6,
-          "minBalance": "10000000",
-          "currentBalance": "50000000",
-          "enabled": true,
-          "address_price": "0xdac17f958d2ee523a2206206994597c13d831ec7",
-          "chainId_price": "1"
-        },
-        {
-          "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "symbol": "WETH",
-          "decimals": 18,
-          "minBalance": "1000000000000000000",
-          "currentBalance": "5000000000000000000",
-          "enabled": false,
-          "address_price": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-          "chainId_price": "1"
-        }
-      ]
-    },
     "arbitrum": {
       "enabled": true,
       "tokens": [
@@ -107,68 +7,48 @@
           "address": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
           "symbol": "USDC",
           "decimals": 6,
-          "minBalance": "10000000",
-          "currentBalance": "100000000",
+          "minBalance": "1000000",
+          "currentBalance": "50000000",
           "enabled": true,
           "address_price": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
           "chainId_price": "42161"
-        },
-        {
-          "address": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
-          "symbol": "USDT",
-          "decimals": 6,
-          "minBalance": "10000000",
-          "currentBalance": "50000000",
-          "enabled": true,
-          "address_price": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
-          "chainId_price": "42161"
         }
       ]
     },
-    "polygon": {
-      "enabled": false,
-      "tokens": [
-        {
-          "address": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-          "symbol": "USDC",
-          "decimals": 6,
-          "minBalance": "10000000",
-          "currentBalance": "0",
-          "enabled": false,
-          "address_price": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
-          "chainId_price": "137"
-        }
-      ]
-    },
-    "bitcoin": {
+    "base": {
       "enabled": true,
       "tokens": [
         {
-          "address": "native",
-          "symbol": "BTC",
-          "decimals": 8,
-          "minBalance": "10000",
-          "currentBalance": "100000",
+          "address": "0x833589fcd6edb6e08f4c7c32d4f71b4dc5ff3074",
+          "symbol": "USDC",
+          "decimals": 6,
+          "minBalance": "1000000",
+          "currentBalance": "50000000",
           "enabled": true,
-          "address_price": "0x0000000000000000000000000000000000000000",
-          "chainId_price": "1"
+          "address_price": "0x833589fcd6edb6e08f4c7c32d4f71b4dc5ff3074",
+          "chainId_price": "8453"
         }
       ]
     },
+    "near": {
+      "enabled": false,
+      "tokens": []
+    },
+    "ethereum": {
+      "enabled": false,
+      "tokens": []
+    },
+    "polygon": {
+      "enabled": false,
+      "tokens": []
+    },
+    "bitcoin": {
+      "enabled": false,
+      "tokens": []
+    },
     "solana": {
       "enabled": false,
-      "tokens": [
-        {
-          "address": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-          "symbol": "USDC",
-          "decimals": 6,
-          "minBalance": "10000000",
-          "currentBalance": "0",
-          "enabled": false,
-          "address_price": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
-          "chainId_price": "1"
-        }
-      ]
+      "tokens": []
     },
     "avalanche": {
       "enabled": false,
@@ -179,10 +59,6 @@
       "tokens": []
     },
     "optimism": {
-      "enabled": false,
-      "tokens": []
-    },
-    "base": {
       "enabled": false,
       "tokens": []
     },

@@ -5,6 +5,7 @@ import { PricingService } from './pricing.service';
 import { SimplePricingService } from './simple-pricing.service';
 import { Nep413SignerService } from './nep413-signer.service';
 import { InventoryService } from './inventory.service';
+import { TransferExecutorService } from './transfer-executor.service';
 
 interface QuoteRequestParams {
   subscription: string;
@@ -22,6 +23,14 @@ interface QuoteStatusParams {
   status: 'pending' | 'filled' | 'expired' | 'cancelled';
 }
 
+interface QuoteMetadata {
+  quoteId: string;
+  originAsset: string;
+  destAsset: string;
+  amountOut: string;
+  createdAt: number;
+}
+
 @Injectable()
 export class SolverBusService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(SolverBusService.name);
@@ -31,6 +40,7 @@ export class SolverBusService implements OnModuleInit, OnModuleDestroy {
   private readonly reconnectDelay = 5000; // 5 seconds
   private isEnabled: boolean;
   private readonly simulationMode: boolean;
+  private activeQuotes: Map<string, QuoteMetadata> = new Map();
 
   constructor(
     private readonly configService: ConfigService,
@@ -38,6 +48,7 @@ export class SolverBusService implements OnModuleInit, OnModuleDestroy {
     private readonly simplePricingService: SimplePricingService,
     private readonly nep413Signer: Nep413SignerService,
     private readonly inventoryService: InventoryService,
+    private readonly transferExecutor: TransferExecutorService,
   ) {
     this.wsUrl =
       this.configService.get('SOLVER_BUS_WS_URL') ||
@@ -249,6 +260,15 @@ export class SolverBusService implements OnModuleInit, OnModuleDestroy {
         quoteResult.amountOut,
       );
 
+      // Store quote metadata for later transfer execution
+      this.activeQuotes.set(quote_id, {
+        quoteId: quote_id,
+        originAsset: quoteParams.defuse_asset_identifier_in,
+        destAsset: quoteParams.defuse_asset_identifier_out,
+        amountOut: quoteResult.amountOut,
+        createdAt: Date.now(),
+      });
+
       this.logger.log(`[Quote Request] Creating NEP-413 signed quote...`);
       const signedQuote = await this.nep413Signer.createSignedQuote(
         quote_id,
@@ -277,14 +297,52 @@ export class SolverBusService implements OnModuleInit, OnModuleDestroy {
   /**
    * Handle quote status updates
    */
-  private handleQuoteStatus(params: QuoteStatusParams) {
+  private async handleQuoteStatus(params: QuoteStatusParams) {
     const { quote_id, status } = params;
     this.logger.log(`[Quote Status] ${quote_id}: ${status}`);
 
-    // TODO: Implement execution logic when quote is filled
+    const quoteMetadata = this.activeQuotes.get(quote_id);
+
+    if (!quoteMetadata) {
+      this.logger.warn(`[Quote Status] No metadata found for quote ${quote_id}`);
+      return;
+    }
+
+    // Handle filled quote
     if (status === 'filled') {
-      this.logger.log(`🎉 Quote ${quote_id} was filled! Execute cross-chain swap.`);
-      // Here you would trigger the actual execution via ExecutionService
+      this.logger.log(`🎉 Quote ${quote_id} was filled! Executing transfer...`);
+      
+      try {
+        // Parse destination asset to get chain and token address
+        const [destChain, destToken] = quoteMetadata.destAsset.split(':');
+        
+        this.logger.log(`[Quote Status] Transfer Details:`);
+        this.logger.log(`  Chain: ${destChain}`);
+        this.logger.log(`  Token: ${destToken}`);
+        this.logger.log(`  Amount: ${quoteMetadata.amountOut}`);
+
+        // Check if we have transfer executor configured for this chain
+        if (!this.transferExecutor.isChainConfigured(destChain)) {
+          this.logger.warn(`⚠️  Transfer executor not configured for ${destChain} - SKIPPING TRANSFER`);
+          this.activeQuotes.delete(quote_id);
+          return;
+        }
+
+        // In production, get recipient address from quote metadata or config
+        // For now, we'll skip actual transfer execution (would need recipient address)
+        this.logger.log(`[Quote Status] Transfer execution pending (requires recipient address from NEAR Intents)`);
+        
+        // Mark as ready for transfer
+        this.activeQuotes.delete(quote_id);
+      } catch (error) {
+        this.logger.error(`[Quote Status] ❌ Error processing filled quote: ${error.message}`);
+      }
+    }
+    // Handle expired quote
+    else if (status === 'expired' || status === 'cancelled') {
+      this.logger.log(`[Quote Status] Quote ${quote_id} ${status} - releasing inventory`);
+      this.inventoryService.releaseInventory(quote_id, quoteMetadata.destAsset, quoteMetadata.amountOut);
+      this.activeQuotes.delete(quote_id);
     }
   }
 

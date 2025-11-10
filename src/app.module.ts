@@ -15,6 +15,7 @@ import { SwapMonitoringService } from './services/swap-monitoring.service';
 import { SolverBusService } from './services/solver-bus.service';
 import { Nep413SignerService } from './services/nep413-signer.service';
 import { InventoryService } from './services/inventory.service';
+import { TransferExecutorService } from './services/transfer-executor.service';
 
 @Module({
   controllers: [QuoteController, ExecuteController, SolverBusController],
@@ -32,6 +33,7 @@ import { InventoryService } from './services/inventory.service';
     SolverBusService,
     Nep413SignerService,
     InventoryService,
+    TransferExecutorService,
   ],
 })
 export class AppModule {}
