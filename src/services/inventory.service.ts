@@ -37,6 +37,7 @@ export class InventoryService {
   private readonly logger = new Logger(InventoryService.name);
   private inventory: Map<string, ChainInventory> = new Map();
   private configPath: string;
+  private rawConfig: InventoryConfig | null = null;
 
   constructor(private readonly configService: ConfigService) {
     this.configPath = this.configService.get('INVENTORY_CONFIG_PATH') || './inventory.json';
@@ -56,12 +57,12 @@ export class InventoryService {
       }
 
       const configData = fs.readFileSync(fullPath, 'utf-8');
-      const config: InventoryConfig = JSON.parse(configData);
+      this.rawConfig = JSON.parse(configData) as InventoryConfig;
 
       this.logger.log(`Loading inventory from ${fullPath}`);
 
       // Parse each chain
-      Object.entries(config.chains).forEach(([chain, chainConfig]) => {
+      Object.entries(this.rawConfig.chains).forEach(([chain, chainConfig]) => {
         const tokens = new Map<string, TokenInventory>();
 
         if (chainConfig.enabled && chainConfig.tokens) {
@@ -298,7 +299,16 @@ export class InventoryService {
   reloadInventory() {
     this.logger.log('Reloading inventory configuration...');
     this.inventory.clear();
+    this.rawConfig = null;
     this.loadInventoryConfig();
+  }
+
+  /**
+   * Get raw inventory configuration
+   * Used by SimplePricingService to load address_price mappings
+   */
+  getRawConfig(): InventoryConfig | null {
+    return this.rawConfig;
   }
 
   /**

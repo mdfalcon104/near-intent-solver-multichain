@@ -16,10 +16,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SimplePricingService = void 0;
 const common_1 = require("@nestjs/common");
 const config_service_1 = require("../config/config.service");
+const inventory_service_1 = require("./inventory.service");
 const axios_1 = __importDefault(require("axios"));
 let SimplePricingService = SimplePricingService_1 = class SimplePricingService {
-    constructor(configService) {
+    constructor(configService, inventoryService) {
         this.configService = configService;
+        this.inventoryService = inventoryService;
         this.logger = new common_1.Logger(SimplePricingService_1.name);
         this.priceCache = new Map();
         this.cacheTTL = 60000;
@@ -75,7 +77,63 @@ let SimplePricingService = SimplePricingService_1 = class SimplePricingService {
             'native': 8,
         };
         this.markupPct = parseFloat(this.configService.get('MARKUP_PCT') || '0.005');
-        this.logger.log(`Initialized with ${this.markupPct * 100}% markup, using Binance (primary) + OKX (backup) for pricing`);
+        this.logger.log(`Initialized with ${this.markupPct * 100}% markup, using OKX (backup) + fallback for pricing`);
+    }
+    async onModuleInit() {
+        try {
+            await this.loadTokenMappingsFromInventory();
+            this.logger.log('✅ Token mappings loaded from inventory');
+        }
+        catch (error) {
+            this.logger.warn(`⚠️ Failed to load token mappings from inventory: ${error.message}`);
+        }
+    }
+    async loadTokenMappingsFromInventory() {
+        const config = this.inventoryService.getRawConfig();
+        if (!config || !config.chains) {
+            this.logger.warn('No chains found in inventory');
+            return;
+        }
+        let mappingsAdded = 0;
+        for (const [chainName, chainConfig] of Object.entries(config.chains)) {
+            const typed = chainConfig;
+            if (!typed || !typed.tokens)
+                continue;
+            for (const token of typed.tokens) {
+                if (!token.address_price || !token.chainId_price) {
+                    continue;
+                }
+                this.tokenMapping[token.address] = {
+                    chainId: token.chainId_price,
+                    address: token.address_price,
+                };
+                if (!this.fallbackPrices[token.address]) {
+                    const symbol = (token.symbol || '').toUpperCase();
+                    if (symbol.includes('USDT') || symbol.includes('USDC')) {
+                        this.fallbackPrices[token.address] = 1.0;
+                    }
+                    else if (symbol.includes('ETH') || symbol.includes('WETH')) {
+                        this.fallbackPrices[token.address] = 3500.0;
+                    }
+                    else if (symbol.includes('BTC')) {
+                        this.fallbackPrices[token.address] = 98000.0;
+                    }
+                    else if (symbol.includes('NEAR') || symbol.includes('WNEAR')) {
+                        this.fallbackPrices[token.address] = 5.0;
+                    }
+                    else {
+                        this.fallbackPrices[token.address] = 0.01;
+                    }
+                }
+                this.logger.debug(`Registered price mapping for ${token.symbol} (${token.address}): chainId=${token.chainId_price}, address=${token.address_price}`);
+                mappingsAdded++;
+            }
+        }
+        this.logger.log(`✅ Loaded ${mappingsAdded} token price mappings from inventory`);
+    }
+    async reloadTokenMappings() {
+        this.logger.log('Reloading token mappings from inventory...');
+        await this.loadTokenMappingsFromInventory();
     }
     async fetchPriceFromBinance(chainId, contractAddress) {
         try {
@@ -221,6 +279,7 @@ let SimplePricingService = SimplePricingService_1 = class SimplePricingService {
 exports.SimplePricingService = SimplePricingService;
 exports.SimplePricingService = SimplePricingService = SimplePricingService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [config_service_1.ConfigService])
+    __metadata("design:paramtypes", [config_service_1.ConfigService,
+        inventory_service_1.InventoryService])
 ], SimplePricingService);
 //# sourceMappingURL=simple-pricing.service.js.map

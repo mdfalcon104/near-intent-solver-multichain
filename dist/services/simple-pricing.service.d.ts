@@ -1,6 +1,9 @@
+import { OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '../config/config.service';
-export declare class SimplePricingService {
+import { InventoryService } from './inventory.service';
+export declare class SimplePricingService implements OnModuleInit {
     private readonly configService;
+    private readonly inventoryService;
     private readonly logger;
     private readonly markupPct;
     private readonly priceCache;
@@ -9,7 +12,10 @@ export declare class SimplePricingService {
     private readonly chainIdMap;
     private readonly tokenMapping;
     private readonly decimals;
-    constructor(configService: ConfigService);
+    constructor(configService: ConfigService, inventoryService: InventoryService);
+    onModuleInit(): Promise<void>;
+    private loadTokenMappingsFromInventory;
+    reloadTokenMappings(): Promise<void>;
     private fetchPriceFromBinance;
     private fetchPriceFromOkx;
     private getTokenPriceUsd;

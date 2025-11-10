@@ -9,7 +9,9 @@
           "decimals": 6,
           "minBalance": "100000000",
           "currentBalance": "1000000000",
-          "enabled": true
+          "enabled": true,
+          "address_price": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "chainId_price": "56"
         },
         {
           "address": "wrap.near",
@@ -17,7 +19,9 @@
           "decimals": 24,
           "minBalance": "50000000000000000000000000",
           "currentBalance": "500000000000000000000000000",
-          "enabled": true
+          "enabled": true,
+          "address_price": "0xc42c30ac6cc15fac9f58a8973a927d3d860b5979",
+          "chainId_price": "1"
         },
         {
           "address": "token.v2.ref-finance.near",
@@ -25,7 +29,9 @@
           "decimals": 18,
           "minBalance": "1000000000000000000000",
           "currentBalance": "10000000000000000000000",
-          "enabled": false
+          "enabled": false,
+          "address_price": "0x0000000000000000000000000000000000000000",
+          "chainId_price": "1"
         }
       ]
     },
@@ -38,7 +44,9 @@
           "decimals": 6,
           "minBalance": "10000000",
           "currentBalance": "100000000",
-          "enabled": true
+          "enabled": true,
+          "address_price": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "chainId_price": "1"
         },
         {
           "address": "0xdac17f958d2ee523a2206206994597c13d831ec7",
@@ -46,7 +54,9 @@
           "decimals": 6,
           "minBalance": "10000000",
           "currentBalance": "50000000",
-          "enabled": true
+          "enabled": true,
+          "address_price": "0xdac17f958d2ee523a2206206994597c13d831ec7",
+          "chainId_price": "1"
         },
         {
           "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
@@ -54,7 +64,9 @@
           "decimals": 18,
           "minBalance": "1000000000000000000",
           "currentBalance": "5000000000000000000",
-          "enabled": false
+          "enabled": false,
+          "address_price": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          "chainId_price": "1"
         }
       ]
     },
@@ -67,7 +79,9 @@
           "decimals": 6,
           "minBalance": "10000000",
           "currentBalance": "100000000",
-          "enabled": true
+          "enabled": true,
+          "address_price": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+          "chainId_price": "42161"
         },
         {
           "address": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
@@ -75,7 +89,9 @@
           "decimals": 6,
           "minBalance": "10000000",
           "currentBalance": "50000000",
-          "enabled": true
+          "enabled": true,
+          "address_price": "0xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9",
+          "chainId_price": "42161"
         }
       ]
     },
@@ -88,7 +104,9 @@
           "decimals": 6,
           "minBalance": "10000000",
           "currentBalance": "0",
-          "enabled": false
+          "enabled": false,
+          "address_price": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
+          "chainId_price": "137"
         }
       ]
     },
@@ -101,7 +119,9 @@
           "decimals": 8,
           "minBalance": "10000",
           "currentBalance": "100000",
-          "enabled": true
+          "enabled": true,
+          "address_price": "0x0000000000000000000000000000000000000000",
+          "chainId_price": "1"
         }
       ]
     },
@@ -114,7 +134,9 @@
           "decimals": 6,
           "minBalance": "10000000",
           "currentBalance": "0",
-          "enabled": false
+          "enabled": false,
+          "address_price": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "chainId_price": "1"
         }
       ]
     },

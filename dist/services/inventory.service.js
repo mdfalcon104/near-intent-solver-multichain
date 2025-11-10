@@ -53,6 +53,7 @@ let InventoryService = InventoryService_1 = class InventoryService {
         this.configService = configService;
         this.logger = new common_1.Logger(InventoryService_1.name);
         this.inventory = new Map();
+        this.rawConfig = null;
         this.configPath = this.configService.get('INVENTORY_CONFIG_PATH') || './inventory.json';
         this.loadInventoryConfig();
     }
@@ -64,9 +65,9 @@ let InventoryService = InventoryService_1 = class InventoryService {
                 return;
             }
             const configData = fs.readFileSync(fullPath, 'utf-8');
-            const config = JSON.parse(configData);
+            this.rawConfig = JSON.parse(configData);
             this.logger.log(`Loading inventory from ${fullPath}`);
-            Object.entries(config.chains).forEach(([chain, chainConfig]) => {
+            Object.entries(this.rawConfig.chains).forEach(([chain, chainConfig]) => {
                 const tokens = new Map();
                 if (chainConfig.enabled && chainConfig.tokens) {
                     chainConfig.tokens.forEach((tokenConfig) => {
@@ -212,7 +213,11 @@ let InventoryService = InventoryService_1 = class InventoryService {
     reloadInventory() {
         this.logger.log('Reloading inventory configuration...');
         this.inventory.clear();
+        this.rawConfig = null;
         this.loadInventoryConfig();
+    }
+    getRawConfig() {
+        return this.rawConfig;
     }
     updateBalance(chain, token, newBalance) {
         const chainInventory = this.inventory.get(chain.toLowerCase());

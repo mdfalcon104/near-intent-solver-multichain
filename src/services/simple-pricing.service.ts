@@ -1,12 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '../config/config.service';
+import { InventoryService } from './inventory.service';
 import axios from 'axios';
 
 /**
  * Simple pricing service that calculates quotes using Binance API for real-time prices
  */
 @Injectable()
-export class SimplePricingService {
+export class SimplePricingService implements OnModuleInit {
   private readonly logger = new Logger(SimplePricingService.name);
   private readonly markupPct: number;
 
@@ -79,11 +80,92 @@ export class SimplePricingService {
     'native': 8,
   };
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly inventoryService: InventoryService,
+  ) {
     this.markupPct = parseFloat(
       this.configService.get('MARKUP_PCT') || '0.005',
     ); // 0.5% default
-    this.logger.log(`Initialized with ${this.markupPct * 100}% markup, using Binance (primary) + OKX (backup) for pricing`);
+    this.logger.log(`Initialized with ${this.markupPct * 100}% markup, using OKX (backup) + fallback for pricing`);
+  }
+
+  /**
+   * Load token mappings from inventory on module init
+   */
+  async onModuleInit(): Promise<void> {
+    try {
+      await this.loadTokenMappingsFromInventory();
+      this.logger.log('✅ Token mappings loaded from inventory');
+    } catch (error) {
+      this.logger.warn(`⚠️ Failed to load token mappings from inventory: ${error.message}`);
+    }
+  }
+
+  /**
+   * Load token price mappings from inventory configuration
+   * Reads address_price and chainId_price fields from inventory.json
+   */
+  private async loadTokenMappingsFromInventory(): Promise<void> {
+    const config = this.inventoryService.getRawConfig();
+    
+    if (!config || !config.chains) {
+      this.logger.warn('No chains found in inventory');
+      return;
+    }
+
+    let mappingsAdded = 0;
+
+    for (const [chainName, chainConfig] of Object.entries(config.chains)) {
+      const typed = chainConfig as any;
+      if (!typed || !typed.tokens) continue;
+
+      for (const token of typed.tokens) {
+        // Check if token has address_price field (new field for price lookups)
+        if (!token.address_price || !token.chainId_price) {
+          continue; // Skip tokens without price mapping
+        }
+
+        // Register mapping: token.address -> { chainId, address_price }
+        this.tokenMapping[token.address] = {
+          chainId: token.chainId_price as string,
+          address: token.address_price as string,
+        };
+
+        // Also set fallback price if it doesn't exist
+        if (!this.fallbackPrices[token.address]) {
+          // Default fallback: USDT/USDC = $1, others = $0.01
+          const symbol = (token.symbol || '').toUpperCase();
+          if (symbol.includes('USDT') || symbol.includes('USDC')) {
+            this.fallbackPrices[token.address] = 1.0;
+          } else if (symbol.includes('ETH') || symbol.includes('WETH')) {
+            this.fallbackPrices[token.address] = 3500.0;
+          } else if (symbol.includes('BTC')) {
+            this.fallbackPrices[token.address] = 98000.0;
+          } else if (symbol.includes('NEAR') || symbol.includes('WNEAR')) {
+            this.fallbackPrices[token.address] = 5.0;
+          } else {
+            this.fallbackPrices[token.address] = 0.01;
+          }
+        }
+
+        this.logger.debug(
+          `Registered price mapping for ${token.symbol} (${token.address}): chainId=${token.chainId_price}, address=${token.address_price}`,
+        );
+        mappingsAdded++;
+      }
+    }
+
+    this.logger.log(`✅ Loaded ${mappingsAdded} token price mappings from inventory`);
+  }
+
+  /**
+   * Reload token mappings from inventory
+   * Can be called to refresh mappings after inventory updates
+   */
+  async reloadTokenMappings(): Promise<void> {
+    this.logger.log('Reloading token mappings from inventory...');
+    await this.loadTokenMappingsFromInventory();
   }
 
   /**
