@@ -229,7 +229,8 @@ let SimplePricingService = SimplePricingService_1 = class SimplePricingService {
         const originPrice = await this.getTokenPriceUsd(originToken);
         const destPrice = await this.getTokenPriceUsd(destToken);
         if (!originPrice || !destPrice) {
-            throw new Error(`Price not found for ${originToken} or ${destToken}. Check Binance API or add token mapping.`);
+            this.logger.warn(`⏭️ Skipping quote: Price not found for ${originToken} (${originPrice ? '✓' : '✗'}) or ${destToken} (${destPrice ? '✓' : '✗'})`);
+            return null;
         }
         const originDecimals = this.getTokenDecimals(originToken);
         const destDecimals = this.getTokenDecimals(destToken);

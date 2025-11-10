@@ -216,6 +216,14 @@ export class SolverBusService implements OnModuleInit, OnModuleDestroy {
         amount: quoteParams.exact_amount_in || quoteParams.exact_amount_out || '0',
       });
 
+      // Skip quote if no price mapping available for tokens
+      if (!quoteResult) {
+        this.logger.warn(
+          `[Quote Request] ⏭️ Skipping quote ${quote_id} - no price mapping for tokens`,
+        );
+        return;
+      }
+
       this.logger.log(
         `[Quote Request] Quote calculated: ${quoteResult.amountOut} (rate: ${quoteResult.rate.toFixed(6)})`,
       );

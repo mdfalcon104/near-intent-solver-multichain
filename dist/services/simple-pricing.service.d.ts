@@ -26,7 +26,7 @@ export declare class SimplePricingService implements OnModuleInit {
     }): Promise<{
         amountOut: string;
         rate: number;
-    }>;
+    } | null>;
     private extractTokenAddress;
     private getTokenDecimals;
     addTokenMapping(tokenAddress: string, chainId: string, contractAddress: string): void;

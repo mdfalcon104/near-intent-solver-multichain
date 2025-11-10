@@ -288,12 +288,13 @@ export class SimplePricingService implements OnModuleInit {
 
   /**
    * Calculate quote for cross-chain swap
+   * Returns null if tokens don't have price mappings (will skip quote)
    */
   async calculateQuote(params: {
     originAsset: string;
     destinationAsset: string;
     amount: string;
-  }): Promise<{ amountOut: string; rate: number }> {
+  }): Promise<{ amountOut: string; rate: number } | null> {
     const { originAsset, destinationAsset, amount } = params;
 
     // Extract token addresses from defuse identifiers
@@ -308,10 +309,12 @@ export class SimplePricingService implements OnModuleInit {
     const originPrice = await this.getTokenPriceUsd(originToken);
     const destPrice = await this.getTokenPriceUsd(destToken);
 
+    // Skip quote if either token doesn't have a price
     if (!originPrice || !destPrice) {
-      throw new Error(
-        `Price not found for ${originToken} or ${destToken}. Check Binance API or add token mapping.`,
+      this.logger.warn(
+        `⏭️ Skipping quote: Price not found for ${originToken} (${originPrice ? '✓' : '✗'}) or ${destToken} (${destPrice ? '✓' : '✗'})`,
       );
+      return null;
     }
 
     // Get decimals

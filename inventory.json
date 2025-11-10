@@ -32,6 +32,36 @@
           "enabled": false,
           "address_price": "0x0000000000000000000000000000000000000000",
           "chainId_price": "1"
+        },
+        {
+          "address": "eth-0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf.omft.near",
+          "symbol": "cbbToken",
+          "decimals": 18,
+          "minBalance": "1000000000000000000",
+          "currentBalance": "0",
+          "enabled": false,
+          "address_price": "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+          "chainId_price": "1"
+        },
+        {
+          "address": "eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
+          "symbol": "USDC (omft)",
+          "decimals": 6,
+          "minBalance": "1000000",
+          "currentBalance": "0",
+          "enabled": false,
+          "address_price": "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+          "chainId_price": "1"
+        },
+        {
+          "address": "eth-0x6b175474e89094c44da98b954eedeac495271d0f.omft.near",
+          "symbol": "DAI",
+          "decimals": 18,
+          "minBalance": "1000000000000000000",
+          "currentBalance": "0",
+          "enabled": false,
+          "address_price": "0x6b175474e89094c44da98b954eedeac495271d0f",
+          "chainId_price": "1"
         }
       ]
     },

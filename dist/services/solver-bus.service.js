@@ -161,6 +161,10 @@ let SolverBusService = SolverBusService_1 = class SolverBusService {
                 destinationAsset: quoteParams.defuse_asset_identifier_out,
                 amount: quoteParams.exact_amount_in || quoteParams.exact_amount_out || '0',
             });
+            if (!quoteResult) {
+                this.logger.warn(`[Quote Request] ⏭️ Skipping quote ${quote_id} - no price mapping for tokens`);
+                return;
+            }
             this.logger.log(`[Quote Request] Quote calculated: ${quoteResult.amountOut} (rate: ${quoteResult.rate.toFixed(6)})`);
             const canFulfill = this.inventoryService.canProvideQuote(quoteParams.defuse_asset_identifier_in, quoteParams.defuse_asset_identifier_out, quoteResult.amountOut);
             if (!canFulfill) {
