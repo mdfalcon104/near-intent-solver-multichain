@@ -69,7 +69,6 @@ let SwapMonitoringService = class SwapMonitoringService {
             if (['SUCCESS', 'FAILED', 'REFUNDED'].includes(status.status)) {
                 record.completedAt = new Date();
                 this.stopMonitoring(depositAddress);
-                console.log(`Swap ${depositAddress} completed with status: ${status.status}`);
             }
             this.swaps.set(depositAddress, record);
         }

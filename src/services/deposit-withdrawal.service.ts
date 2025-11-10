@@ -189,7 +189,7 @@ export class DepositWithdrawalService {
     try {
       const assets = await this.bridge.getSupportedAssets();
       this.logger.log(
-        `[Bridge] ✅ Retrieved ${assets.length} supported assets`,
+        `[Bridge] Retrieved ${assets.length} supported assets`,
       );
       return assets;
     } catch (error) {
@@ -235,7 +235,7 @@ export class DepositWithdrawalService {
         amount,
       );
 
-      this.logger.log(`[Bridge] ✅ Deposit address obtained`);
+      this.logger.log(`[Bridge] Deposit address obtained`);
       this.logger.log(
         `  Address: ${depositInfo.depositAddress}`,
       );
@@ -260,7 +260,7 @@ export class DepositWithdrawalService {
         );
       }
 
-      this.logger.log(`[Bridge] ✅ Auto-deposit completed`);
+      this.logger.log(`[Bridge] Auto-deposit completed`);
       this.logger.log(`  TX: ${txHash}`);
 
       return {
@@ -396,7 +396,7 @@ export class DepositWithdrawalService {
         recipientAddress,
       );
 
-      this.logger.log(`[Bridge] ✅ Withdrawal address obtained`);
+      this.logger.log(`[Bridge] Withdrawal address obtained`);
       this.logger.log(`  Address: ${recipientAddress}`);
 
       // Auto-execute withdrawal based on chain type
@@ -419,7 +419,7 @@ export class DepositWithdrawalService {
         );
       }
 
-      this.logger.log(`[Bridge] ✅ Auto-withdrawal completed`);
+      this.logger.log(`[Bridge] Auto-withdrawal completed`);
       this.logger.log(`  TX: ${txHash}`);
 
       return {
@@ -530,7 +530,7 @@ export class DepositWithdrawalService {
     try {
       const deposits = await this.bridge.getRecentDeposits(address, limit);
       this.logger.log(
-        `[Bridge] ✅ Retrieved ${deposits.length} recent deposits`,
+        `[Bridge] Retrieved ${deposits.length} recent deposits`,
       );
       return deposits;
     } catch (error) {
@@ -559,7 +559,7 @@ export class DepositWithdrawalService {
 
     try {
       const status = await this.bridge.getWithdrawalStatus(withdrawalId);
-      this.logger.log(`[Bridge] ✅ Status: ${status.status}`);
+      this.logger.log(`[Bridge] Status: ${status.status}`);
       return status;
     } catch (error) {
       this.logger.error(`[Bridge] Failed to get withdrawal status: ${error}`);
@@ -591,7 +591,7 @@ export class DepositWithdrawalService {
         symbol,
         amount,
       );
-      this.logger.log(`[Bridge] ✅ Deposit notification sent`);
+      this.logger.log(`[Bridge] Deposit notification sent`);
       return result;
     } catch (error) {
       this.logger.error(
@@ -630,7 +630,7 @@ export class DepositWithdrawalService {
         chain,
         amount,
       );
-      this.logger.log(`[Bridge] ✅ Fee estimated: ${estimate.fee}`);
+      this.logger.log(`[Bridge] Fee estimated: ${estimate.fee}`);
       return estimate;
     } catch (error) {
       this.logger.error(

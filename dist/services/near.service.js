@@ -45,6 +45,17 @@ let NearService = class NearService {
             finality: 'optimistic',
         });
     }
+    async functionCall(contractId, methodName, args, gas = '100000000000000', deposit = '0') {
+        if (!this.account)
+            await this.init();
+        return this.account.functionCall({
+            contractId: contractId,
+            methodName: methodName,
+            args,
+            gas,
+            attachedDeposit: deposit,
+        });
+    }
 };
 exports.NearService = NearService;
 exports.NearService = NearService = __decorate([

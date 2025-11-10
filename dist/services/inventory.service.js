@@ -46,18 +46,23 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.InventoryService = void 0;
 const common_1 = require("@nestjs/common");
 const config_service_1 = require("../config/config.service");
+const near_service_1 = require("./near.service");
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 let InventoryService = InventoryService_1 = class InventoryService {
-    constructor(configService) {
+    constructor(configService, near) {
         this.configService = configService;
+        this.near = near;
         this.logger = new common_1.Logger(InventoryService_1.name);
         this.inventory = new Map();
         this.rawConfig = null;
+        this.INTENTS_CONTRACT = 'intents.near';
         this.configPath = this.configService.get('INVENTORY_CONFIG_PATH') || './inventory.json';
-        this.loadInventoryConfig();
+        this.loadInventoryConfig().catch((error) => {
+            this.logger.error(`Error loading inventory config: ${error.message}`);
+        });
     }
-    loadInventoryConfig() {
+    async loadInventoryConfig() {
         try {
             const fullPath = path.resolve(process.cwd(), this.configPath);
             if (!fs.existsSync(fullPath)) {
@@ -67,19 +72,30 @@ let InventoryService = InventoryService_1 = class InventoryService {
             const configData = fs.readFileSync(fullPath, 'utf-8');
             this.rawConfig = JSON.parse(configData);
             this.logger.log(`Loading inventory from ${fullPath}`);
-            Object.entries(this.rawConfig.chains).forEach(([chain, chainConfig]) => {
+            for (const [chain, chainConfig] of Object.entries(this.rawConfig.chains)) {
                 const tokens = new Map();
                 if (chainConfig.enabled && chainConfig.tokens) {
-                    chainConfig.tokens.forEach((tokenConfig) => {
+                    for (const tokenConfig of chainConfig.tokens) {
+                        let currentBalance = tokenConfig.currentBalance;
+                        if (tokenConfig.enabled) {
+                            try {
+                                const contractBalance = await this.fetchTokenBalanceFromContract(tokenConfig.address);
+                                currentBalance = contractBalance;
+                                this.logger.log(`[Balance] Updated ${tokenConfig.symbol} on ${chain} from contract: ${this.formatBalance(currentBalance, tokenConfig.decimals)}`);
+                            }
+                            catch (balanceError) {
+                                this.logger.warn(`[Balance] Failed to fetch ${tokenConfig.symbol} from contract, using default: ${this.formatBalance(tokenConfig.currentBalance, tokenConfig.decimals)}`);
+                            }
+                        }
                         tokens.set(tokenConfig.address.toLowerCase(), {
                             address: tokenConfig.address,
                             symbol: tokenConfig.symbol,
                             decimals: tokenConfig.decimals,
-                            balance: tokenConfig.currentBalance,
+                            balance: currentBalance,
                             minBalance: tokenConfig.minBalance,
                             enabled: tokenConfig.enabled,
                         });
-                    });
+                    }
                 }
                 this.inventory.set(chain.toLowerCase(), {
                     chain,
@@ -88,12 +104,12 @@ let InventoryService = InventoryService_1 = class InventoryService {
                 });
                 if (chainConfig.enabled && tokens.size > 0) {
                     const enabledTokens = Array.from(tokens.values()).filter(t => t.enabled);
-                    this.logger.log(`✅ ${chain}: ${enabledTokens.length} enabled tokens`);
+                    this.logger.log(`${chain}: ${enabledTokens.length} enabled tokens`);
                     enabledTokens.forEach((token) => {
                         this.logger.log(`  - ${token.symbol} (${token.address}): ${this.formatBalance(token.balance, token.decimals)} (min: ${this.formatBalance(token.minBalance, token.decimals)})`);
                     });
                 }
-            });
+            }
             this.logger.log(`Inventory loaded successfully`);
         }
         catch (error) {
@@ -231,10 +247,89 @@ let InventoryService = InventoryService_1 = class InventoryService {
         tokenInventory.balance = newBalance;
         this.logger.log(`Updated ${token} balance on ${chain}: ${newBalance}`);
     }
+    async fetchTokenBalanceFromContract(tokenId, accountId) {
+        const account = accountId || this.configService.get('NEAR_ACCOUNT_ID');
+        this.logger.log(`[TokenBalance] Fetching balance from intents contract...`);
+        this.logger.log(`  Contract: ${this.INTENTS_CONTRACT}`);
+        this.logger.log(`  Token: ${tokenId}`);
+        this.logger.log(`  Account: ${account}`);
+        try {
+            const response = await this.near.viewFunction(this.INTENTS_CONTRACT, 'mt_balance_of', {
+                account_id: account,
+                token_id: tokenId,
+            });
+            const balance = typeof response === 'string'
+                ? response
+                : Buffer.isBuffer(response)
+                    ? Buffer.from(response).toString()
+                    : JSON.stringify(response);
+            this.logger.log(`[TokenBalance] Balance fetched`);
+            this.logger.log(`  Balance: ${balance}`);
+            return balance;
+        }
+        catch (error) {
+            this.logger.error(`[TokenBalance] Failed to fetch balance: ${error}`);
+            throw error;
+        }
+    }
+    async syncTokenBalance(chain, token, tokenId) {
+        this.logger.log(`[Sync] Syncing token balance...`);
+        this.logger.log(`  Chain: ${chain}`);
+        this.logger.log(`  Token: ${token}`);
+        this.logger.log(`  TokenId: ${tokenId}`);
+        try {
+            const liveBalance = await this.fetchTokenBalanceFromContract(tokenId);
+            this.updateBalance(chain, token, liveBalance);
+            this.logger.log(`[Sync] Balance synced`);
+            this.logger.log(`  Chain: ${chain}`);
+            this.logger.log(`  Token: ${token}`);
+            this.logger.log(`  New Balance: ${liveBalance}`);
+            return liveBalance;
+        }
+        catch (error) {
+            this.logger.error(`[Sync] Failed to sync balance: ${error}`);
+            throw error;
+        }
+    }
+    async syncAllTokenBalances() {
+        this.logger.log(`[SyncAll] Starting full inventory sync...`);
+        const syncResults = {};
+        try {
+            for (const [chain, chainInventory] of this.inventory.entries()) {
+                if (!chainInventory.enabled) {
+                    continue;
+                }
+                syncResults[chain] = {};
+                for (const [tokenAddress, tokenInventory] of chainInventory.tokens) {
+                    if (!tokenInventory.enabled) {
+                        continue;
+                    }
+                    try {
+                        const tokenId = `nep141:${tokenInventory.address}`;
+                        const liveBalance = await this.fetchTokenBalanceFromContract(tokenId);
+                        tokenInventory.balance = liveBalance;
+                        syncResults[chain][tokenInventory.symbol] = liveBalance;
+                        this.logger.log(`[SyncAll] ${tokenInventory.symbol} on ${chain}: ${liveBalance}`);
+                    }
+                    catch (error) {
+                        this.logger.warn(`[SyncAll] Failed to sync ${tokenInventory.symbol} on ${chain}: ${error}`);
+                        syncResults[chain][tokenInventory.symbol] = 'ERROR';
+                    }
+                }
+            }
+            this.logger.log(`[SyncAll] Full sync completed`);
+            return syncResults;
+        }
+        catch (error) {
+            this.logger.error(`[SyncAll] Full sync failed: ${error}`);
+            throw error;
+        }
+    }
 };
 exports.InventoryService = InventoryService;
 exports.InventoryService = InventoryService = InventoryService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [config_service_1.ConfigService])
+    __metadata("design:paramtypes", [config_service_1.ConfigService,
+        near_service_1.NearService])
 ], InventoryService);
 //# sourceMappingURL=inventory.service.js.map

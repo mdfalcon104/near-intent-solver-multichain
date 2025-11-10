@@ -80,9 +80,8 @@ export class SolverBusService implements OnModuleInit, OnModuleDestroy {
       this.logger.log(`Connecting to Solver Bus at ${this.wsUrl}`);
       this.ws = new WebSocket(this.wsUrl);
 
-      this.ws.on('open', () => {
-        this.logger.log('✅ Connected to Solver Bus WebSocket');
-        this.subscribeToQuoteRequests();
+      this.ws.addEventListener('open', () => {
+        this.logger.log('Connected to Solver Bus WebSocket');
       });
 
       this.ws.on('message', (data: WebSocket.Data) => {
@@ -249,7 +248,7 @@ export class SolverBusService implements OnModuleInit, OnModuleDestroy {
         return;
       }
 
-      this.logger.log(`[Quote Request] ✅ Inventory check passed`);
+      this.logger.log(`[Quote Request] Inventory check passed`);
 
       // Reserve inventory
       this.inventoryService.reserveInventory(
@@ -284,7 +283,7 @@ export class SolverBusService implements OnModuleInit, OnModuleDestroy {
       } else {
         this.logger.log(`[Quote Request] Sending quote response to Solver Bus...`);
         await this.sendQuoteResponse(signedQuote);
-        this.logger.log(`✅ Sent quote response for ${quote_id}`);
+        this.logger.log(`Sent quote response for ${quote_id}`);
       }
     } catch (error) {
       this.logger.error(`❌ Failed to handle quote request ${quote_id}:`, error.message);

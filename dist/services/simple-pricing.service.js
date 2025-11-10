@@ -82,10 +82,10 @@ let SimplePricingService = SimplePricingService_1 = class SimplePricingService {
     async onModuleInit() {
         try {
             await this.loadTokenMappingsFromInventory();
-            this.logger.log('✅ Token mappings loaded from inventory');
+            this.logger.log('Token mappings loaded from inventory');
         }
         catch (error) {
-            this.logger.warn(`⚠️ Failed to load token mappings from inventory: ${error.message}`);
+            this.logger.warn(`Failed to load token mappings from inventory: ${error.message}`);
         }
     }
     async loadTokenMappingsFromInventory() {
@@ -129,7 +129,7 @@ let SimplePricingService = SimplePricingService_1 = class SimplePricingService {
                 mappingsAdded++;
             }
         }
-        this.logger.log(`✅ Loaded ${mappingsAdded} token price mappings from inventory`);
+        this.logger.log(`Loaded ${mappingsAdded} token price mappings from inventory`);
     }
     async reloadTokenMappings() {
         this.logger.log('Reloading token mappings from inventory...');
@@ -202,19 +202,19 @@ let SimplePricingService = SimplePricingService_1 = class SimplePricingService {
             let price = await this.fetchPriceFromBinance(mapping.chainId, mapping.address);
             if (price !== null && price > 0) {
                 this.priceCache.set(cacheKey, { price, timestamp: Date.now() });
-                this.logger.log(`✅ Binance price for ${tokenAddress}: $${price}`);
+                this.logger.log(`Binance price for ${tokenAddress}: $${price}`);
                 return price;
             }
             price = await this.fetchPriceFromOkx(mapping.chainId, mapping.address);
             if (price !== null && price > 0) {
                 this.priceCache.set(cacheKey, { price, timestamp: Date.now() });
-                this.logger.log(`✅ OKX price for ${tokenAddress}: $${price}`);
+                this.logger.log(`OKX price for ${tokenAddress}: $${price}`);
                 return price;
             }
         }
         const fallbackPrice = this.fallbackPrices[tokenAddress];
         if (fallbackPrice) {
-            this.logger.log(`⚠️ Using fallback price for ${tokenAddress}: $${fallbackPrice}`);
+            this.logger.log(`Using fallback price for ${tokenAddress}: $${fallbackPrice}`);
             this.priceCache.set(cacheKey, { price: fallbackPrice, timestamp: Date.now() });
             return fallbackPrice;
         }

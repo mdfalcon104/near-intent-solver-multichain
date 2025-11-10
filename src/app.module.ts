@@ -3,6 +3,7 @@ import { QuoteController } from './controllers/quote.controller';
 import { ExecuteController } from './controllers/execute.controller';
 import { SolverBusController } from './controllers/solver-bus.controller';
 import { DepositWithdrawalController } from './controllers/deposit-withdrawal.controller';
+import { InventoryController } from './controllers/inventory.controller';
 import { PricingService } from './services/pricing.service';
 import { SimplePricingService } from './services/simple-pricing.service';
 import { ExecutionService } from './services/execution.service';
@@ -20,7 +21,7 @@ import { DepositWithdrawalService } from './services/deposit-withdrawal.service'
 import { ChaindefuserBridgeService } from './services/chaindefuser-bridge.service';
 
 @Module({
-  controllers: [QuoteController, ExecuteController, SolverBusController, DepositWithdrawalController],
+  controllers: [QuoteController, ExecuteController, SolverBusController, DepositWithdrawalController, InventoryController],
   providers: [
     ConfigService,
     EvmService,

@@ -51,10 +51,10 @@ export class TransferExecutorService {
           const signer = new ethers.Wallet(privateKey, provider);
           this.signers.set(chain.name, signer);
 
-          this.logger.log(`✅ Initialized ${chain.name} provider and signer`);
+          this.logger.log(`Initialized ${chain.name} provider and signer`);
           this.logger.log(`   Address: ${signer.address}`);
         } catch (error) {
-          this.logger.warn(`⚠️  Failed to initialize ${chain.name}: ${error.message}`);
+          this.logger.warn(`Failed to initialize ${chain.name}: ${error.message}`);
         }
       }
     }
@@ -119,19 +119,19 @@ export class TransferExecutorService {
       this.logger.log(`[Transfer] Sending transaction...`);
       const tx = await tokenContract.transfer(recipientAddress, amount);
 
-      this.logger.log(`[Transfer] ✅ Transaction sent: ${tx.hash}`);
+      this.logger.log(`[Transfer] Transaction sent: ${tx.hash}`);
 
       // Wait for confirmation
       const receipt = await tx.wait();
 
       if (receipt?.status === 1) {
-        this.logger.log(`[Transfer] ✅ Transfer confirmed in block ${receipt.blockNumber}`);
+        this.logger.log(`[Transfer] Transfer confirmed in block ${receipt.blockNumber}`);
         return {
           txHash: tx.hash,
           status: 'confirmed',
         };
       } else {
-        this.logger.error(`[Transfer] ❌ Transaction failed`);
+        this.logger.error(`[Transfer] Transaction failed`);
         throw new Error('Transaction failed');
       }
     } catch (error) {

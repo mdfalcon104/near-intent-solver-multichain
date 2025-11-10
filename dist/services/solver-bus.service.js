@@ -32,6 +32,7 @@ let SolverBusService = SolverBusService_1 = class SolverBusService {
         this.ws = null;
         this.reconnectTimeout = null;
         this.reconnectDelay = 5000;
+        this.activeQuotes = new Map();
         this.wsUrl =
             this.configService.get('SOLVER_BUS_WS_URL') ||
                 'wss://solver-relay-v2.chaindefuser.com/ws';
@@ -57,9 +58,8 @@ let SolverBusService = SolverBusService_1 = class SolverBusService {
         try {
             this.logger.log(`Connecting to Solver Bus at ${this.wsUrl}`);
             this.ws = new ws_1.default(this.wsUrl);
-            this.ws.on('open', () => {
-                this.logger.log('✅ Connected to Solver Bus WebSocket');
-                this.subscribeToQuoteRequests();
+            this.ws.addEventListener('open', () => {
+                this.logger.log('Connected to Solver Bus WebSocket');
             });
             this.ws.on('message', (data) => {
                 this.handleMessage(data.toString());
@@ -171,8 +171,15 @@ let SolverBusService = SolverBusService_1 = class SolverBusService {
                 this.logger.warn(`[Quote Request] ⚠️ Insufficient inventory for ${quote_id} - SKIPPING`);
                 return;
             }
-            this.logger.log(`[Quote Request] ✅ Inventory check passed`);
+            this.logger.log(`[Quote Request] Inventory check passed`);
             this.inventoryService.reserveInventory(quote_id, quoteParams.defuse_asset_identifier_out, quoteResult.amountOut);
+            this.activeQuotes.set(quote_id, {
+                quoteId: quote_id,
+                originAsset: quoteParams.defuse_asset_identifier_in,
+                destAsset: quoteParams.defuse_asset_identifier_out,
+                amountOut: quoteResult.amountOut,
+                createdAt: Date.now(),
+            });
             this.logger.log(`[Quote Request] Creating NEP-413 signed quote...`);
             const signedQuote = await this.nep413Signer.createSignedQuote(quote_id, quoteParams, quoteResult.amountOut);
             this.logger.log(`[Quote Request] Quote signed successfully`);
@@ -185,7 +192,7 @@ let SolverBusService = SolverBusService_1 = class SolverBusService {
             else {
                 this.logger.log(`[Quote Request] Sending quote response to Solver Bus...`);
                 await this.sendQuoteResponse(signedQuote);
-                this.logger.log(`✅ Sent quote response for ${quote_id}`);
+                this.logger.log(`Sent quote response for ${quote_id}`);
             }
         }
         catch (error) {
@@ -193,11 +200,33 @@ let SolverBusService = SolverBusService_1 = class SolverBusService {
             this.logger.error(error.stack);
         }
     }
-    handleQuoteStatus(params) {
+    async handleQuoteStatus(params) {
         const { quote_id, status } = params;
         this.logger.log(`[Quote Status] ${quote_id}: ${status}`);
+        const quoteMetadata = this.activeQuotes.get(quote_id);
+        if (!quoteMetadata) {
+            this.logger.warn(`[Quote Status] No metadata found for quote ${quote_id}`);
+            return;
+        }
         if (status === 'filled') {
-            this.logger.log(`🎉 Quote ${quote_id} was filled! Execute cross-chain swap.`);
+            this.logger.log(`🎉 Quote ${quote_id} was filled! Executing transfer...`);
+            try {
+                const [destChain, destToken] = quoteMetadata.destAsset.split(':');
+                this.logger.log(`[Quote Status] Transfer Details:`);
+                this.logger.log(`  Chain: ${destChain}`);
+                this.logger.log(`  Token: ${destToken}`);
+                this.logger.log(`  Amount: ${quoteMetadata.amountOut}`);
+                this.logger.log(`[Quote Status] Transfer execution pending (requires recipient address from NEAR Intents)`);
+                this.activeQuotes.delete(quote_id);
+            }
+            catch (error) {
+                this.logger.error(`[Quote Status] ❌ Error processing filled quote: ${error.message}`);
+            }
+        }
+        else if (status === 'expired' || status === 'cancelled') {
+            this.logger.log(`[Quote Status] Quote ${quote_id} ${status} - releasing inventory`);
+            this.inventoryService.releaseInventory(quote_id, quoteMetadata.destAsset, quoteMetadata.amountOut);
+            this.activeQuotes.delete(quote_id);
         }
     }
     async sendQuoteResponse(signedQuote) {

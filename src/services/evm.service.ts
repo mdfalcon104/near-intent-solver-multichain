@@ -113,7 +113,7 @@ export class EvmService {
       tx.nonce = nonce;
       const signedTx = await wallet.signTransaction(tx as ethers.TransactionRequest);
 
-      this.logger.log(`[EVM] ✅ Deposit transaction signed`);
+      this.logger.log(`[EVM] Deposit transaction signed`);
       this.logger.log(`  From: ${wallet.address}`);
       this.logger.log(`  To: ${tx.to}`);
       this.logger.log(`  Gas Limit: ${gasLimit.toString()}`);
@@ -217,7 +217,7 @@ export class EvmService {
       // Sign transaction
       const signedTx = await wallet.signTransaction(tx as ethers.TransactionRequest);
 
-      this.logger.log(`[EVM] ✅ Withdrawal transaction signed`);
+      this.logger.log(`[EVM] Withdrawal transaction signed`);
       this.logger.log(`  From: ${wallet.address}`);
       this.logger.log(`  To: ${tx.to}`);
       this.logger.log(`  Gas Limit: ${tx.gasLimit.toString()}`);
@@ -260,7 +260,7 @@ export class EvmService {
       const provider = this.getProvider(chain);
       const txResponse = await provider.broadcastTransaction(signedTx);
 
-      this.logger.log(`[EVM] ✅ Transaction broadcasted`);
+      this.logger.log(`[EVM] Transaction broadcasted`);
       this.logger.log(`  TX Hash: ${txResponse.hash}`);
       this.logger.log(`  From: ${txResponse.from}`);
       this.logger.log(`  To: ${txResponse.to}`);

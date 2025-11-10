@@ -17,6 +17,7 @@ export declare class SolverBusService implements OnModuleInit, OnModuleDestroy {
     private readonly reconnectDelay;
     private isEnabled;
     private readonly simulationMode;
+    private activeQuotes;
     constructor(configService: ConfigService, pricingService: PricingService, simplePricingService: SimplePricingService, nep413Signer: Nep413SignerService, inventoryService: InventoryService);
     onModuleInit(): Promise<void>;
     onModuleDestroy(): Promise<void>;

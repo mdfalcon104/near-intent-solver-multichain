@@ -39,16 +39,22 @@ export class InventoryService {
   private inventory: Map<string, ChainInventory> = new Map();
   private configPath: string;
   private rawConfig: InventoryConfig | null = null;
+  private readonly INTENTS_CONTRACT = 'intents.near';
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly near: NearService,
+  ) {
     this.configPath = this.configService.get('INVENTORY_CONFIG_PATH') || './inventory.json';
-    this.loadInventoryConfig();
+    this.loadInventoryConfig().catch((error) => {
+      this.logger.error(`Error loading inventory config: ${error.message}`);
+    });
   }
 
   /**
-   * Load inventory configuration from JSON file
+   * Load inventory configuration from JSON file and fetch current balances from contract
    */
-  private loadInventoryConfig() {
+  private async loadInventoryConfig() {
     try {
       const fullPath = path.resolve(process.cwd(), this.configPath);
       
@@ -63,20 +69,39 @@ export class InventoryService {
       this.logger.log(`Loading inventory from ${fullPath}`);
 
       // Parse each chain
-      Object.entries(this.rawConfig.chains).forEach(([chain, chainConfig]) => {
+      for (const [chain, chainConfig] of Object.entries(this.rawConfig.chains)) {
         const tokens = new Map<string, TokenInventory>();
 
         if (chainConfig.enabled && chainConfig.tokens) {
-          chainConfig.tokens.forEach((tokenConfig) => {
+          for (const tokenConfig of chainConfig.tokens) {
+            // Fetch current balance from NEAR contract if enabled
+            let currentBalance = tokenConfig.currentBalance;
+            
+            if (tokenConfig.enabled) {
+              try {
+                const contractBalance = await this.fetchTokenBalanceFromContract(
+                  tokenConfig.address,
+                );
+                currentBalance = contractBalance;
+                this.logger.log(
+                  `[Balance] Updated ${tokenConfig.symbol} on ${chain} from contract: ${this.formatBalance(currentBalance, tokenConfig.decimals)}`,
+                );
+              } catch (balanceError) {
+                this.logger.warn(
+                  `[Balance] Failed to fetch ${tokenConfig.symbol} from contract, using default: ${this.formatBalance(tokenConfig.currentBalance, tokenConfig.decimals)}`,
+                );
+              }
+            }
+
             tokens.set(tokenConfig.address.toLowerCase(), {
               address: tokenConfig.address,
               symbol: tokenConfig.symbol,
               decimals: tokenConfig.decimals,
-              balance: tokenConfig.currentBalance,
+              balance: currentBalance,
               minBalance: tokenConfig.minBalance,
               enabled: tokenConfig.enabled,
             });
-          });
+          }
         }
 
         this.inventory.set(chain.toLowerCase(), {
@@ -87,14 +112,14 @@ export class InventoryService {
 
         if (chainConfig.enabled && tokens.size > 0) {
           const enabledTokens = Array.from(tokens.values()).filter(t => t.enabled);
-          this.logger.log(`✅ ${chain}: ${enabledTokens.length} enabled tokens`);
+          this.logger.log(`${chain}: ${enabledTokens.length} enabled tokens`);
           enabledTokens.forEach((token) => {
             this.logger.log(
               `  - ${token.symbol} (${token.address}): ${this.formatBalance(token.balance, token.decimals)} (min: ${this.formatBalance(token.minBalance, token.decimals)})`,
             );
           });
         }
-      });
+      }
 
       this.logger.log(`Inventory loaded successfully`);
     } catch (error) {
@@ -328,5 +353,143 @@ export class InventoryService {
 
     tokenInventory.balance = newBalance;
     this.logger.log(`Updated ${token} balance on ${chain}: ${newBalance}`);
+  }
+
+  /**
+   * Fetch token balance from NEAR intents contract
+   * Read-only call to intents.near mt_balance_of
+   * @param tokenId - NEP-141 token identifier (e.g., "nep141:wrap.near")
+   * @param accountId - Account to query balance for (defaults to NEAR_ACCOUNT_ID)
+   * @returns Token balance as string (in smallest unit)
+   */
+  async fetchTokenBalanceFromContract(
+    tokenId: string,
+    accountId?: string,
+  ): Promise<string> {
+    const account = accountId || this.configService.get('NEAR_ACCOUNT_ID');
+    
+    this.logger.log(`[TokenBalance] Fetching balance from intents contract...`);
+    this.logger.log(`  Contract: ${this.INTENTS_CONTRACT}`);
+    this.logger.log(`  Token: ${tokenId}`);
+    this.logger.log(`  Account: ${account}`);
+
+    try {
+      // Call read-only function: intents.near mt_balance_of
+      const response = await this.near.viewFunction(
+        this.INTENTS_CONTRACT,
+        'mt_balance_of',
+        {
+          account_id: account,
+          token_id: tokenId,
+        },
+      );
+
+      // Parse the response
+      const balance = typeof response === 'string' 
+        ? response 
+        : Buffer.isBuffer(response) 
+          ? Buffer.from(response).toString()
+          : JSON.stringify(response);
+
+      this.logger.log(`[TokenBalance] Balance fetched`);
+      this.logger.log(`  Balance: ${balance}`);
+
+      return balance;
+    } catch (error) {
+      this.logger.error(`[TokenBalance] Failed to fetch balance: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Sync token balance with intents contract
+   * Updates local inventory balance with live balance from contract
+   * @param chain - Chain name (e.g., "near", "arbitrum")
+   * @param token - Token symbol (e.g., "USDC", "USDT")
+   * @param tokenId - Full token identifier (e.g., "nep141:wrap.near")
+   * @returns Updated balance
+   */
+  async syncTokenBalance(
+    chain: string,
+    token: string,
+    tokenId: string,
+  ): Promise<string> {
+    this.logger.log(`[Sync] Syncing token balance...`);
+    this.logger.log(`  Chain: ${chain}`);
+    this.logger.log(`  Token: ${token}`);
+    this.logger.log(`  TokenId: ${tokenId}`);
+
+    try {
+      // Fetch live balance from contract
+      const liveBalance = await this.fetchTokenBalanceFromContract(tokenId);
+
+      // Update local inventory
+      this.updateBalance(chain, token, liveBalance);
+
+      this.logger.log(`[Sync] Balance synced`);
+      this.logger.log(`  Chain: ${chain}`);
+      this.logger.log(`  Token: ${token}`);
+      this.logger.log(`  New Balance: ${liveBalance}`);
+
+      return liveBalance;
+    } catch (error) {
+      this.logger.error(`[Sync] Failed to sync balance: ${error}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Sync all token balances from intents contract
+   * Updates all token balances in inventory to match contract state
+   * @returns Summary of synced balances
+   */
+  async syncAllTokenBalances(): Promise<Record<string, Record<string, string>>> {
+    this.logger.log(`[SyncAll] Starting full inventory sync...`);
+    
+    const syncResults: Record<string, Record<string, string>> = {};
+
+    try {
+      // Iterate through all chains and tokens
+      for (const [chain, chainInventory] of this.inventory.entries()) {
+        if (!chainInventory.enabled) {
+          continue;
+        }
+
+        syncResults[chain] = {};
+
+        for (const [tokenAddress, tokenInventory] of chainInventory.tokens) {
+          if (!tokenInventory.enabled) {
+            continue;
+          }
+
+          try {
+            // Build token ID for NEAR contract
+            const tokenId = `nep141:${tokenInventory.address}`;
+            
+            // Fetch balance
+            const liveBalance = await this.fetchTokenBalanceFromContract(tokenId);
+            
+            // Update inventory
+            tokenInventory.balance = liveBalance;
+            syncResults[chain][tokenInventory.symbol] = liveBalance;
+
+            this.logger.log(
+              `[SyncAll] ${tokenInventory.symbol} on ${chain}: ${liveBalance}`,
+            );
+          } catch (error) {
+            this.logger.warn(
+              `[SyncAll] Failed to sync ${tokenInventory.symbol} on ${chain}: ${error}`,
+            );
+            syncResults[chain][tokenInventory.symbol] = 'ERROR';
+          }
+        }
+      }
+
+      this.logger.log(`[SyncAll] Full sync completed`);
+      return syncResults;
+    } catch (error) {
+      this.logger.error(`[SyncAll] Full sync failed: ${error}`);
+      throw error;
+    }
   }
 }

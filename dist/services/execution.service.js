@@ -39,9 +39,6 @@ let ExecutionService = class ExecutionService {
                     message: `Chain ${body.originChain} is not configured. Supported chains: ${this.chainKeys.getSupportedChains().join(', ')}`
                 };
             }
-            console.log(`[Market Maker] Executing cross-chain swap for intent ${body.intent_id}`);
-            console.log(`[Market Maker] ${body.originChain} → ${body.destinationChain}`);
-            console.log(`[Market Maker] Amount: ${body.amount}, Recipient: ${body.recipient}`);
             const result = await this.oneClick.executeCrossChainSwap({
                 originChain: body.originChain,
                 originAsset: body.originAsset,
@@ -52,8 +49,6 @@ let ExecutionService = class ExecutionService {
                 refundTo: body.refundTo || body.recipient,
                 slippageTolerance: body.slippageTolerance || 100,
             });
-            console.log(`[Market Maker] Funds sent to 1Click deposit address: ${result.quote.quote.depositAddress}`);
-            console.log(`[Market Maker] Deposit TX hash: ${result.depositTxHash}`);
             this.monitorSwapInBackground(result.quote.quote.depositAddress, result.quote.quote.depositMemo, key, body.intent_id);
             return {
                 status: 'processing',
@@ -83,28 +78,18 @@ let ExecutionService = class ExecutionService {
     }
     async monitorSwapInBackground(depositAddress, depositMemo, lockKey, intentId) {
         try {
-            console.log(`[Market Maker] Monitoring swap for intent ${intentId}...`);
             const finalStatus = await this.oneClick.monitorSwap(depositAddress, depositMemo, 900000);
-            console.log(`[Market Maker] Swap completed for intent ${intentId}`);
-            console.log(`[Market Maker] Status: ${finalStatus.status}`);
             if (finalStatus.swapDetails) {
-                console.log(`[Market Maker] Amount In: ${finalStatus.swapDetails.amountInFormatted}`);
-                console.log(`[Market Maker] Amount Out: ${finalStatus.swapDetails.amountOutFormatted}`);
                 if (finalStatus.swapDetails.destinationChainTxHashes?.length > 0) {
-                    console.log(`[Market Maker] Destination TX: ${finalStatus.swapDetails.destinationChainTxHashes[0].hash}`);
-                    console.log(`[Market Maker] Explorer: ${finalStatus.swapDetails.destinationChainTxHashes[0].explorerUrl}`);
                 }
                 if (finalStatus.status === 'REFUNDED' && finalStatus.swapDetails.refundedAmount) {
-                    console.log(`[Market Maker] Refunded: ${finalStatus.swapDetails.refundedAmountFormatted}`);
                 }
             }
         }
         catch (error) {
-            console.error(`[Market Maker] Swap monitoring failed for intent ${intentId}:`, error);
         }
         finally {
             await this.lock.unlock(lockKey);
-            console.log(`[Market Maker] Released lock for intent ${intentId}`);
         }
     }
     async handleExecution(body) {

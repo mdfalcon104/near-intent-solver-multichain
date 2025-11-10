@@ -182,7 +182,7 @@ export class ChaindefuserBridgeService {
       }
 
       this.logger.log(
-        `[GetSupportedAssets] ✅ Found ${assets.length} supported assets`,
+        `[GetSupportedAssets] Found ${assets.length} supported assets`,
       );
       return assets;
     } catch (error) {
@@ -236,7 +236,7 @@ export class ChaindefuserBridgeService {
 
       const depositData = response.data.result;
 
-      this.logger.log(`[GetDepositAddress] ✅ Deposit address obtained`);
+      this.logger.log(`[GetDepositAddress] Deposit address obtained`);
       this.logger.log(`  Address: ${depositData.address}`);
       this.logger.log(`  Min Deposit: ${depositData.min_deposit}`);
 
@@ -293,7 +293,7 @@ export class ChaindefuserBridgeService {
       );
 
       this.logger.log(
-        `[GetRecentDeposits] ✅ Retrieved ${deposits.length} deposits`,
+        `[GetRecentDeposits] Retrieved ${deposits.length} deposits`,
       );
       return deposits;
     } catch (error) {
@@ -330,7 +330,7 @@ export class ChaindefuserBridgeService {
       const status = response.data.result;
 
       this.logger.log(
-        `[GetWithdrawalStatus] ✅ Status: ${status.status}`,
+        `[GetWithdrawalStatus] Status: ${status.status}`,
       );
 
       return {
@@ -398,7 +398,7 @@ export class ChaindefuserBridgeService {
       const result = response.data.result;
 
       this.logger.log(
-        `[NotifyDeposit] ✅ Notification sent: ${result.status}`,
+        `[NotifyDeposit] Notification sent: ${result.status}`,
       );
 
       return {
@@ -457,7 +457,7 @@ export class ChaindefuserBridgeService {
 
       const fee = response.data.result;
 
-      this.logger.log(`[EstimateWithdrawalFee] ✅ Fee estimated`);
+      this.logger.log(`[EstimateWithdrawalFee] Fee estimated`);
       this.logger.log(`  Fee: ${fee.fee}`);
       this.logger.log(`  Total: ${fee.total}`);
 
@@ -541,7 +541,7 @@ export class ChaindefuserBridgeService {
 
       const result = response.data.result;
 
-      this.logger.log(`[WithdrawFunds] ✅ Withdrawal initiated`);
+      this.logger.log(`[WithdrawFunds] Withdrawal initiated`);
       this.logger.log(`  Withdrawal ID: ${result.withdrawal_id}`);
       this.logger.log(`  TX Hash: ${result.tx_hash}`);
 
@@ -602,7 +602,7 @@ export class ChaindefuserBridgeService {
         );
       }
 
-      this.logger.log(`[DepositFunds] ✅ Deposit details prepared`);
+      this.logger.log(`[DepositFunds] Deposit details prepared`);
 
       return {
         status: 'ready',
